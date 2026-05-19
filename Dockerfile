@@ -1,17 +1,3 @@
-ARG DATABASE_URL
-ARG BETTER_AUTH_SECRET
-ARG BETTER_AUTH_URL
-ARG NEXT_PUBLIC_BETTER_AUTH_URL 
-ARG NEXT_PUBLIC_FIREBASE_API_KEY
-ARG NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID
-ARG NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-ARG NEXT_PUBLIC_FIREBASE_APP_ID
-ARG FIREBASE_PROJECT_ID=fir-auth-wads-lab
-ARG FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@fir-auth-wads-lab.iam.gserviceaccount.com
-ARG FIREBASE_PRIVATE_KEY
-
 # ---------- Base dependencies ----------
 FROM node:20-alpine AS deps
 WORKDIR /app
@@ -53,6 +39,9 @@ ENV FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+RUN npx prisma generate
+
 RUN npm run build
 # ---------- Production runner ----------
 FROM node:20-alpine AS runner
@@ -61,6 +50,7 @@ ENV NODE_ENV=production
 ENV PORT=3000
 COPY package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/generated ./generated
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 EXPOSE 3000
